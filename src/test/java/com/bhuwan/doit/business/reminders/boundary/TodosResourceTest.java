@@ -7,8 +7,11 @@ package com.bhuwan.doit.business.reminders.boundary;
 
 import com.airhacks.rulz.jaxrsclient.JAXRSClientProvider;
 import static com.airhacks.rulz.jaxrsclient.JAXRSClientProvider.buildWithURI;
+import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import static org.hamcrest.CoreMatchers.is;
@@ -39,6 +42,32 @@ public class TodosResourceTest {
 
     @Test
     public void crud() {
+
+        // Create a json entity for ToDo
+        JsonObjectBuilder toDoBuilder = Json.createObjectBuilder();
+        JsonObject todoToBeCreate = toDoBuilder.add("caption", "Implement").add("description", "todo description").add("priority", 50).build();
+
+        // create
+        Response postResponse = this.provider.target().request().post(Entity.json(todoToBeCreate));
+        assertThat(postResponse.getStatus(), is(201));
+        String location = postResponse.getHeaderString("location");
+        System.out.println("Location url: " + location);
+
+        // find
+        JsonObject dedicatedTodo = this.provider.client().target(location).request(MediaType.APPLICATION_JSON).get(JsonObject.class);
+        assertTrue(dedicatedTodo.getString("caption").contains("Implement"));
+
+        // update
+        JsonObjectBuilder updateBuilder = Json.createObjectBuilder();
+        JsonObject todoToBeUpdated = updateBuilder.add("caption", "Implemented").build();
+
+        this.provider.client().target(location).request(MediaType.APPLICATION_JSON).put(Entity.json(todoToBeUpdated));
+        
+        //find it again
+        JsonObject updated = this.provider.client().target(location).request(MediaType.APPLICATION_JSON).get(JsonObject.class);
+        assertTrue(updated.getString("caption").contains("Implemented"));
+
+        //find
         Response response = this.provider.target().request(MediaType.APPLICATION_JSON).get();
         assertThat(response.getStatus(), is(200));
         JsonArray allTodos = response.readEntity(JsonArray.class);
@@ -47,10 +76,6 @@ public class TodosResourceTest {
 
         JsonObject todo = allTodos.getJsonObject(0);
         assertTrue(todo.getString("caption").startsWith("Impl"));
-
-        // Get with id
-        JsonObject todo42 = this.provider.target().path("42").request(MediaType.APPLICATION_JSON).get(JsonObject.class);
-        assertTrue(todo42.getString("caption").contains("42"));
 
         // Delete
         Response delResp = this.provider.target().path("42").request(MediaType.APPLICATION_JSON).delete();
