@@ -62,13 +62,30 @@ public class TodosResourceTest {
         JsonObject todoToBeUpdated = updateBuilder.add("caption", "Implemented").build();
 
         this.provider.client().target(location).request(MediaType.APPLICATION_JSON).put(Entity.json(todoToBeUpdated));
-        
-        //find it again
+
+        //verify update
         JsonObject updated = this.provider.client().target(location).request(MediaType.APPLICATION_JSON).get(JsonObject.class);
         assertTrue(updated.getString("caption").contains("Implemented"));
 
+        // update status
+        JsonObjectBuilder statusUpdateBuilder = Json.createObjectBuilder();
+        JsonObject statusUpdate = statusUpdateBuilder.add("done", true).build();
+
+        this.provider.client().target(location).path("status").request(MediaType.APPLICATION_JSON).put(Entity.json(statusUpdate));
+
+        //verify status
+        JsonObject getUpdatedStatus = this.provider.client().target(location).request(MediaType.APPLICATION_JSON).get(JsonObject.class);
+        assertThat(getUpdatedStatus.getBoolean("done"), is(true));
+
+        // update non existing status
+        JsonObjectBuilder nonExistingObject = Json.createObjectBuilder();
+        JsonObject nonExistingStatusUpdate = nonExistingObject.add("done", true).build();
+
+        Response response = this.provider.target().path("-9").path("status").request(MediaType.APPLICATION_JSON).put(Entity.json(nonExistingStatusUpdate));
+        assertThat(response.getStatus(), is(400));
+
         //find
-        Response response = this.provider.target().request(MediaType.APPLICATION_JSON).get();
+        response = this.provider.target().request(MediaType.APPLICATION_JSON).get();
         assertThat(response.getStatus(), is(200));
         JsonArray allTodos = response.readEntity(JsonArray.class);
         System.out.println("payload: " + allTodos);
