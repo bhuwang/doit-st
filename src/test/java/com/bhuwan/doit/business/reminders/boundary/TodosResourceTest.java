@@ -83,6 +83,15 @@ public class TodosResourceTest {
 
         Response response = this.provider.target().path("-9").path("status").request(MediaType.APPLICATION_JSON).put(Entity.json(nonExistingStatusUpdate));
         assertThat(response.getStatus(), is(400));
+        assertFalse(response.getHeaderString("reason").isEmpty());
+        
+        // update mal formed status
+        JsonObjectBuilder malFormedStatus = Json.createObjectBuilder();
+        JsonObject malFormedStatusUpdate = malFormedStatus.add("mal formed", true).build();
+
+        response = this.provider.target(location).path("status").request(MediaType.APPLICATION_JSON).put(Entity.json(malFormedStatusUpdate));
+        assertThat(response.getStatus(), is(400));
+        assertFalse(response.getHeaderString("reason").isEmpty());
 
         //find
         response = this.provider.target().request(MediaType.APPLICATION_JSON).get();
