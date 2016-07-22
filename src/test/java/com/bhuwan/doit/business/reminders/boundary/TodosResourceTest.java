@@ -16,6 +16,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import org.junit.Rule;
@@ -61,7 +62,19 @@ public class TodosResourceTest {
         JsonObjectBuilder updateBuilder = Json.createObjectBuilder();
         JsonObject todoToBeUpdated = updateBuilder.add("caption", "Implemented").build();
 
-        this.provider.client().target(location).request(MediaType.APPLICATION_JSON).put(Entity.json(todoToBeUpdated));
+        Response updateResponse = this.provider.client().target(location).request(MediaType.APPLICATION_JSON).put(Entity.json(todoToBeUpdated));
+        assertThat(updateResponse.getStatus(), is(200));
+
+        // update again for optimistic locking verification
+        // update
+        updateBuilder = Json.createObjectBuilder();
+        todoToBeUpdated = updateBuilder.add("caption", "Implemented").add("priority", 44).build();
+
+        updateResponse = this.provider.client().target(location).request(MediaType.APPLICATION_JSON).put(Entity.json(todoToBeUpdated));
+        assertThat(updateResponse.getStatus(), is(409));
+        String cause = updateResponse.getHeaderString("cause");
+        assertNotNull(cause);
+        System.out.println("Conflict cause: " + cause);
 
         //verify update
         JsonObject updated = this.provider.client().target(location).request(MediaType.APPLICATION_JSON).get(JsonObject.class);
@@ -84,7 +97,7 @@ public class TodosResourceTest {
         Response response = this.provider.target().path("-9").path("status").request(MediaType.APPLICATION_JSON).put(Entity.json(nonExistingStatusUpdate));
         assertThat(response.getStatus(), is(400));
         assertFalse(response.getHeaderString("reason").isEmpty());
-        
+
         // update mal formed status
         JsonObjectBuilder malFormedStatus = Json.createObjectBuilder();
         JsonObject malFormedStatusUpdate = malFormedStatus.add("mal formed", true).build();
