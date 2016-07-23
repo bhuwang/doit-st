@@ -120,4 +120,41 @@ public class TodosResourceTest {
         Response delResp = this.provider.target().path("42").request(MediaType.APPLICATION_JSON).delete();
         assertThat(delResp.getStatus(), is(204));
     }
+
+    @Test
+    public void createInvalidTodo() {
+        // create ToDo without caption
+        // Create a json entity for ToDo
+        JsonObjectBuilder toDoBuilder = Json.createObjectBuilder();
+        JsonObject todoToBeCreate = toDoBuilder.add("description", "todo description").add("priority", 50).build();
+
+        // create
+        Response postResponse = this.provider.target().request().post(Entity.json(todoToBeCreate));
+        assertThat(postResponse.getStatus(), is(400));
+        postResponse.getHeaders().entrySet().forEach(System.out::println);
+    }
+
+    @Test
+    public void createValidTodo() {
+        // create ToDo without caption
+        // Create a json entity for ToDo
+        JsonObjectBuilder toDoBuilder = Json.createObjectBuilder();
+        JsonObject todoToBeCreate = toDoBuilder.add("caption", "ab").add("description", "todo description").add("priority", 50).build();
+
+        // create
+        Response postResponse = this.provider.target().request().post(Entity.json(todoToBeCreate));
+        assertThat(postResponse.getStatus(), is(201));
+    }
+    
+    @Test
+    public void createToDoWithPriorityGt10AndWithoutDesc() {
+        // create ToDo with priority >10 and without description 
+        // Create a json entity for ToDo
+        JsonObjectBuilder toDoBuilder = Json.createObjectBuilder();
+        JsonObject todoToBeCreate = toDoBuilder.add("caption", "ab").add("priority", 11).build();
+
+        // create
+        Response postResponse = this.provider.target().request().post(Entity.json(todoToBeCreate));
+        assertThat(postResponse.getStatus(), is(400));
+    }
 }
