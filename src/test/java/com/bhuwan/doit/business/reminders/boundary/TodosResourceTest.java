@@ -55,7 +55,7 @@ public class TodosResourceTest {
         System.out.println("Location url: " + location);
 
         // find
-        JsonObject dedicatedTodo = this.provider.client().target(location).request(MediaType.APPLICATION_JSON).get(JsonObject.class);
+        JsonObject dedicatedTodo = this.provider.client() .target(location).request(MediaType.APPLICATION_JSON).get(JsonObject.class);
         assertTrue(dedicatedTodo.getString("caption").contains("Implement"));
 
         // update
@@ -152,6 +152,18 @@ public class TodosResourceTest {
         // Create a json entity for ToDo
         JsonObjectBuilder toDoBuilder = Json.createObjectBuilder();
         JsonObject todoToBeCreate = toDoBuilder.add("caption", "ab").add("priority", 11).build();
+
+        // create
+        Response postResponse = this.provider.target().request().post(Entity.json(todoToBeCreate));
+        assertThat(postResponse.getStatus(), is(400));
+    }
+    
+    @Test
+    public void createToDoWithCaptionLessThan2Char() {
+        // create ToDo with priority >10 and without description 
+        // Create a json entity for ToDo
+        JsonObjectBuilder toDoBuilder = Json.createObjectBuilder();
+        JsonObject todoToBeCreate = toDoBuilder.add("caption", "e").add("priority", 10).build();
 
         // create
         Response postResponse = this.provider.target().request().post(Entity.json(todoToBeCreate));
